@@ -8,7 +8,7 @@ import torchvision
 from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
 
-import PIL
+from PIL import Image
 
 ## Birdsong dataset class
 # Once complete add this to 
@@ -19,13 +19,21 @@ import PIL
 # maskrcnn_benchmark/data/datasets/evaluation/__init__.py
 class birdsoundDataset(object):
     def __init__(self, ann_file, spec_dir):
+        self.spec_dir = spec_dir
+
+        
+        self.annotations = ...
+        # probably should have some sterilization here...
+        self.images = os.listdir(spec_dir)
+        
         # Check the data and compile some internal structure of data
                  
     def __getitem__(self,idx):
         # load the image as a PIL image
-        image = Image.open(image_file)
+        image = Image.open(self.spec_dir + '/' + self.images[idx])
         boxes = [[]] ##from annotation files...
         # and labels
+        # I don't quite understand the label construction either
         labels = torch.tensor([10,20])
         # e.g. boxes = [[0,0,10,10],[10,20,50,50],...,[x1,y1,x2,y2]]
         # create a boxlist from the boxes
