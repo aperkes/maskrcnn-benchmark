@@ -8,6 +8,7 @@ import torchvision
 from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
 
+import PIL
 
 ## Birdsong dataset class
 # Once complete add this to 
@@ -19,10 +20,21 @@ from maskrcnn_benchmark.structures.segmentation_mask import SegmentationMask
 class birdsoundDataset(object):
     def __init__(self, ann_file, spec_dir):
         # Check the data and compile some internal structure of data
-         
+                 
     def __getitem__(self,idx):
-# load the image as a PIL image
-        image = ...
+        # load the image as a PIL image
+        image = Image.open(image_file)
+        boxes = [[]] ##from annotation files...
+        # and labels
+        labels = torch.tensor([10,20])
+        # e.g. boxes = [[0,0,10,10],[10,20,50,50],...,[x1,y1,x2,y2]]
+        # create a boxlist from the boxes
+        boxlist = BoxList(boxes, image.size, mode="xyxy")
+        boxlist.add_field("labels",labels)
+
+        ## I don't quite understand this part
+        if self.transforms:
+            image, boxlist = self.transforms(image,boxlist)
 
         return image, boxlist, idx
 
