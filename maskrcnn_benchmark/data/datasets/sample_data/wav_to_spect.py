@@ -28,9 +28,48 @@ def wav_to_png(wav_file):
     Sxx = wav_to_spect(wav_file)
     plt.imsave(spect_dir + '/' + png_file,Sxx)
 
+## It might be nice to check annotations at the same time
+## This code will likely be run as part of the code to generate the wav chunks in the first place...
+def time_to_pixel(t_seconds, t0, t_res):
+    t_wav = t_seconds - t0
+    t_pixel = t_wav * t_res
+    return int(np.floor(t_pixel))
+
+## Takes annotation file of format: 
+##   (wav_file_name,label start (sample), label finish (sample), label, tstart, tfinish, line #, wav #
+## Returns pandas df of format
+##   Name Boxes Labels
+def parse_annotation(annot_file, sampling_rate = 48000):
+## Read through file and shove the data into a couple lists and dicts
+    with open(annot_file,'r') as annotations:
+        boxes, labels = {},{}
+        names = []
+        for line in annotations:
+            columns = line.split(',')
+            line_id = int(columns[7])
+            (chunk_name, sample_start, sample_end, label) = columns[0:4]
+            sample_start = float(sample_start)
+            sample_end = float(sample_end)
+            if chunk_name not in names:
+                names.append(chunk_name)
+                boxes[chunk_name] = []
+                labels[chunk_name] = []
+            boxes[chunk_name].append([sample_start / sampling_rate, sample_end / sampling_rate])
+            labels[chunk_name].append(label)
+## Initialize pd dataframe
+    data = {'Name':names,'Box':[[]] * len(names),'Label': [[]] * len(names)}
+    annot_df = pd.DataFrame(data=data,columns='Name','Box','Label') 
+    for i in range(len(names)):
+        annot_df.loc[i]['Box'] = boxes[annot_df.loc[i]['Name']
+        annot_df.loc[i]['Label'] = labels[annot_df.loc[i]['Name']
+    return annot_df
+
 if __name__ == '__main__':
     wav_dir = sys.argv[1]
     spect_dir = sys.argv[2]
+    if len(sys.argv) > 3:
+        annot_file = sys.argv[3]
+        annot_file = os.path.abspath(annot_file)
 
     wav_dir = os.path.abspath(wav_dir)
     spect_dir = os.path.abspath(spect_dir)
@@ -40,5 +79,5 @@ if __name__ == '__main__':
             continue
         else:
             wav_to_png(wav_dir + '/' + wav)
-
+            # Find chunk and add annotations
     print('All done!')
