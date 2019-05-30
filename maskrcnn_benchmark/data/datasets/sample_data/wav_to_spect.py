@@ -34,11 +34,21 @@ def wav_to_png(wav_file, png_file = None, save=True):
         plt.imsave(png_file,Sxx)
     return Sxx, ts
 
-## gets pixel value from time (seconds). Needs pixels per second
+## gets pixel (index) value from time (seconds). Needs pixels per second
 def time_to_pixel(t_seconds, t0, t_res):
     t_wav = t_seconds - t0
     t_pixel = t_wav * t_res
     return int(np.floor(t_pixel))
+
+## gets pixel (index) value from time (seconds).
+def find_time(ts, t_start = 0, t_stop = -1):
+    if t_start <= ts[0]: # Deal with edge case
+        i_start = 0
+    else:
+        i_start = np.searchsorted(times,t_start) - 1 
+    i_stop = np.searchsorted(times,t_stop) - 1
+    return i_start, i_stop
+
 
 ## Takes annotation file of format: 
 ##   (wav_file_name,label start (sample), label finish (sample), label, tstart, tfinish, line #, wav #
@@ -62,11 +72,29 @@ def parse_annotation(annot_file, sampling_rate = 48000):
             boxes[chunk_name].append([sample_start / sampling_rate, sample_end / sampling_rate])
             labels[chunk_name].append(label)
 ## Initialize pd dataframe
-    data = {'Name':names,'Boxes':[[]] * len(names),'Labels': [[]] * len(names)}
-    annot_df = pd.DataFrame(data=data,columns=['Name','Boxes','Labels']) 
+    data = {'Name':names,'Boxes_t':[[]] * len(names),'Boxes_i':[[]] * len(names),'Labels': [[]] * len(names)}
+    annot_df = pd.DataFrame(data=data,columns=['Name','Boxes_t','Boxes_i','Labels']) 
     for i in range(len(names)):
-        annot_df.loc[i]['Boxes'] = boxes[annot_df.loc[i]['Name']]
+        annot_df.loc[i]['Boxes_t'] = boxes[annot_df.loc[i]['Name']]
         annot_df.loc[i]['Labels'] = labels[annot_df.loc[i]['Name']]
+    return annot_df
+
+def make_annotation(wav_dir,annot_file, save=False,spect_dir = None):
+    annot_df = parse_annotation(annot_file)
+    for wav in os.listdir(wav_dir):
+        if '.wav' not in wav:
+            continue
+        png_file = None
+        if spect_dir != None:
+            png_file = wav.split('.')[0] + '.png'
+            png_file = spect_dir + '/' + png_file
+        Sxx, ts = wav_to_png(wav_dir + '/' + wav, png_file,save=save)
+        wav_annot = annot_df.loc[annot_df['Name'] == wav]
+        for l in range(len(png_annot['Labels'])):
+            label = png_annot['Labels'][l]
+            t_start,t_finish = wav_annot['Boxes'][l]
+            i_start,i_finish = find_time(ts,t_start,t_finish)
+            wav_annot['Boxes_i'].append([i_start,i_finish])
     return annot_df
 
 if __name__ == '__main__':
@@ -79,13 +107,5 @@ if __name__ == '__main__':
     wav_dir = os.path.abspath(wav_dir)
     spect_dir = os.path.abspath(spect_dir)
 
-    for wav in os.listdir(wav_dir):
-        if '.wav' not in wav:
-            continue
-        else:
-            png_file = wav.split('.')[0] + '.png'
-            png_file = spect_dir + '/' + png_file
-            Sxx, ts = wav_to_png(wav_dir + '/' + wav, png_file)
-## Now use ts and the annotation file to make a new annotation file.
-            # Find chunk and add annotations
+    annot_df = make_annotation(wav_dir,annot_file)
     print('All done!')
