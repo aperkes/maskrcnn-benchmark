@@ -45,8 +45,8 @@ def find_time(ts, t_start = 0, t_stop = -1):
     if t_start <= ts[0]: # Deal with edge case
         i_start = 0
     else:
-        i_start = np.searchsorted(times,t_start) - 1 
-    i_stop = np.searchsorted(times,t_stop) - 1
+        i_start = np.searchsorted(ts,t_start) - 1 
+    i_stop = np.searchsorted(ts,t_stop) - 1
     return i_start, i_stop
 
 
@@ -81,7 +81,9 @@ def parse_annotation(annot_file, sampling_rate = 48000):
 
 def make_annotation(wav_dir,annot_file, save=False,spect_dir = None):
     annot_df = parse_annotation(annot_file)
-    for wav in os.listdir(wav_dir):
+    wav_list = sorted(os.listdir(wav_dir))
+    ## Step through each wav and update the annotation (save a spect while you're at it if you want.) 
+    for wav in wav_list:
         if '.wav' not in wav:
             continue
         png_file = None
@@ -89,12 +91,20 @@ def make_annotation(wav_dir,annot_file, save=False,spect_dir = None):
             png_file = wav.split('.')[0] + '.png'
             png_file = spect_dir + '/' + png_file
         Sxx, ts = wav_to_png(wav_dir + '/' + wav, png_file,save=save)
-        wav_annot = annot_df.loc[annot_df['Name'] == wav]
-        for l in range(len(png_annot['Labels'])):
-            label = png_annot['Labels'][l]
-            t_start,t_finish = wav_annot['Boxes'][l]
-            i_start,i_finish = find_time(ts,t_start,t_finish)
-            wav_annot['Boxes_i'].append([i_start,i_finish])
+        ## Sometimes pandas is stupid: this recovers the index for the row
+        wav_index = annot_df.index[annot_df['Name'] == wav].tolist()[0]
+        wav_annot = annot_df.loc[wav_index]
+        ## Annoyingly, pandas treats .loc[int] differently from .loc[logical]
+        labels = wav_annot['Labels']
+        boxes_t = wav_annot['Boxes_t']
+        boxes_i = []
+        ## For each label, update the annotation with the index start and stop times
+        for l in range(len(wav_annot['Labels'])):
+            label = labels[l]
+            t_start,t_stop = boxes_t[l]
+            i_start,i_stop = find_time(ts,t_start,t_stop)
+            boxes_i.append([i_start,i_stop])
+        wav_annot['Boxes_i'] = boxes_i
     return annot_df
 
 if __name__ == '__main__':
@@ -108,4 +118,5 @@ if __name__ == '__main__':
     spect_dir = os.path.abspath(spect_dir)
 
     annot_df = make_annotation(wav_dir,annot_file)
+    annot_df.to_csv('output_annotation.csv')
     print('All done!')
