@@ -7,6 +7,9 @@ import os
 class DatasetCatalog(object):
     DATA_DIR = "datasets"
     DATASETS = {
+        "birdsounds": {
+            "img_dir": "birdsounds/images",
+            "ann_file":"birdsounds/birdsound_annotation.csv"
         "coco_2017_train": {
             "img_dir": "coco/train2017",
             "ann_file": "coco/annotations/instances_train2017.json"
@@ -108,6 +111,13 @@ class DatasetCatalog(object):
 
     @staticmethod
     def get(name):
+        if "birdsong" in name:
+            data_dir = DatasetCatalog.DATA_DIR
+            attrs = DatasetCatalong.DATASETS[name]
+            args = dict(
+                root=os.path.join(data_dir, attrs["img_dir"]),
+                ann_file=os.path.join(data_dir, attrs["ann_file"]),
+            )
         if "coco" in name:
             data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
