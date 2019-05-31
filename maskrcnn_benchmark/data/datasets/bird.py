@@ -19,7 +19,7 @@ import csv, ast, os
 # And for testing: 
 # maskrcnn_benchmark/data/datasets/evaluation/__init__.py
 class BirdDataset(object):
-    def __init__(self, ann_file, spec_dir):
+    def __init__(self, spec_dir,ann_file):
         self.spec_dir = os.path.abspath(spec_dir)
         self.ann_file = os.path.abspath(ann_file)
          

@@ -7,9 +7,9 @@ import os
 class DatasetCatalog(object):
     DATA_DIR = "datasets"
     DATASETS = {
-        "birdsounds": {
-            "img_dir": "birdsounds/images",
-            "ann_file":"birdsounds/birdsound_annotation.csv"
+        "bird": {
+            "img_dir": "bird/images",
+            "ann_file":"bird/bird_annotation.csv"
         "coco_2017_train": {
             "img_dir": "coco/train2017",
             "ann_file": "coco/annotations/instances_train2017.json"
