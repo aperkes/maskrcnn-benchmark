@@ -18,22 +18,23 @@ import csv, ast, os
 
 # And for testing: 
 # maskrcnn_benchmark/data/datasets/evaluation/__init__.py
-class BirdDataset(object):
+class BirdDataset(torchvision.datasets.coco.CocoDetection):
     def __init__(
-    self, ann_file, spec_dir,
+    self, ann_file, root,
     remove_images_without_annotations = False,transforms=None
     ):
-        self.spec_dir = os.path.abspath(spec_dir)
+        super(BirdDataset, self).__init__(root, ann_file)
+        self.root = os.path.abspath(root)
         self.ann_file = os.path.abspath(ann_file) 
         self.ann_dict = {
             'c':1,
             'n':0}
         # probably should have some sterilization here...
-        self.images = os.listdir(self.spec_dir)
+        self.images = os.listdir(self.root)
         self.n_images = len(self.images)
         self.label_list, self.box_list = self.parse_annotations(ann_file)
         for i in range(len(self.images)):
-            self.images[i] = self.spec_dir + '/' + self.images[i]
+            self.images[i] = self.root + '/' + self.images[i]
         self.transforms = transforms 
         self.id_to_img_map = list(range(self.n_images))
         # Check the data and compile some internal structure of data
