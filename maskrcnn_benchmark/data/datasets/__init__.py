@@ -2,6 +2,6 @@
 from .coco import COCODataset
 from .voc import PascalVOCDataset
 from .concat_dataset import ConcatDataset
-from .birdsounds import birdsoundDataset
+from .bird import BirdDataset
 
-__all__ = ["COCODataset", "ConcatDataset", "PascalVOCDataset","birdsoundDataset"]
+__all__ = ["COCODataset", "ConcatDataset", "PascalVOCDataset","BirdDataset"]
