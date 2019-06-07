@@ -1,7 +1,10 @@
 ## Another script to convert old annotation into json
 # Also handy because it acts as the format for coco json: 
 import sys, json
-import oldBird
+import bird0 as oldBird
+import numpy as np
+
+#from maskrcnn_benchmark.data.datasets import bird0 as oldBird
 
 ann_file = sys.argv[1]
 spec_dir = sys.argv[2]
@@ -9,12 +12,14 @@ spec_dir = sys.argv[2]
 old_database = oldBird.BirdDataset(ann_file,spec_dir)
 n_images = old_database.n_images
 
+n_categories = 2
+
 data = {
     "info":{},
     "licenses":[{}] * n_images,
     "images":[{}] * n_images,
-    "annotations":[{}] * annotations,
-    "categories":[{}] * n_categories
+    "annotations":[], #list of dicts
+    "categories":[{}] * n_categories # list of dicts
 }
 
 data["info"] = {
@@ -26,7 +31,7 @@ data["info"] = {
     "date_created":"2019/01/01"
 }
 
-data["categories"]: [
+data["categories"] = [
     {"supercategory":"background","id":1,"name":"noise"},
     {"supercategory":"cowbird","id":2,"name":"vocalization"}
 ]
@@ -40,7 +45,7 @@ for i in range(n_images):
         "url": None,
         "id": idx,
         "name": "Property of Schmidt/Kostas"
-
+    }
     data["images"][i] = {
         "license":i,
         "file_name":old_database.images[i],
@@ -58,17 +63,16 @@ for i in range(n_images):
         width = x2 - x1
         height = y2 - y1
         ann = {
-            "segmentations":[[]],
+            "segmentations":[[x1,y1,x2,y2]],
             "area": width * height,
             "iscrowd":0,
             "image_id": idx,
             "bbox":[x1,y1,width,height],
-            "category_id":labels[a] + 1
+            "category_id":labels[a] + 1,
             "id": ann_count
-        },
+        }
         ann_count += 1
         data["annotations"].append(ann)
         
 with open('output.json', 'w') as outfile:
     json.dump(data,outfile)
-json.dump(data)
