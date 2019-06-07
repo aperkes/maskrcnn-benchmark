@@ -33,8 +33,9 @@ data["categories"]: [
 
 ann_count = 0
 for i in range(n_images):
-    image,boxlist, idx = old_database[i]
-
+    image, _, idx = old_database[i]
+    labels = old_database.label_list[i]
+    boxes = old_database.box_list[i]
     data["licenses"][i] = {
         "url": None,
         "id": idx,
@@ -51,9 +52,9 @@ for i in range(n_images):
         "id":idx
     }
 
-    n_annotations = len(boxlist.labels)
+    n_annotations = len(labels)
     for a in range(n_annotations):
-        [x1,y1,x2,y2] = boxlist.boxes[a]
+        [x1,y1,x2,y2] = boxes[a]
         width = x2 - x1
         height = y2 - y1
         ann = {
@@ -62,10 +63,10 @@ for i in range(n_images):
             "iscrowd":0,
             "image_id": idx,
             "bbox":[x1,y1,width,height],
-            "category_id":boxlist.labels[a] + 1
+            "category_id":labels[a] + 1
             "id": ann_count
         },
-        ann_count +=1
+        ann_count += 1
         data["annotations"].append(ann)
         
 with open('output.json', 'w') as outfile:
