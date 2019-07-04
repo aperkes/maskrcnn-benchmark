@@ -33,6 +33,8 @@ class BirdDataset(torchvision.datasets.coco.CocoDetection):
             self.images[i] = self.root + '/' + self.images[i]
         self.transforms = transforms 
         self.id_to_img_map = list(range(self.n_images))
+        self.json_category_id_to_contiguous_id = {1:1,2:2}
+        self.contiguous_category_id_to_json_id = {1:1,2:2}
         # Check the data and compile some internal structure of data
 
     def __getitem__(self,idx):
