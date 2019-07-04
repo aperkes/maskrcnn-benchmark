@@ -9,7 +9,7 @@ class DatasetCatalog(object):
     DATASETS = {
         "bird": {
             "img_dir": "bird/images",
-            "ann_file":"bird/bird_annotation.csv"
+            "ann_file":"bird/bird_annotation.json"
         },
         "coco_2017_train": {
             "img_dir": "coco/train2017",
@@ -116,7 +116,7 @@ class DatasetCatalog(object):
             data_dir = DatasetCatalog.DATA_DIR
             attrs = DatasetCatalog.DATASETS[name]
             args = dict(
-                spec_dir=os.path.join(data_dir, attrs["img_dir"]),
+                root=os.path.join(data_dir, attrs["img_dir"]),
                 ann_file=os.path.join(data_dir, attrs["ann_file"]),
             )
             return dict(

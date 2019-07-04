@@ -26,53 +26,46 @@ class BirdDataset(torchvision.datasets.coco.CocoDetection):
         super(BirdDataset, self).__init__(root, ann_file)
         self.root = os.path.abspath(root)
         self.ann_file = os.path.abspath(ann_file) 
-        self.ann_dict = {
-            'c':1,
-            'n':0}
         # probably should have some sterilization here...
         self.images = os.listdir(self.root)
         self.n_images = len(self.images)
-        self.label_list, self.box_list = self.parse_annotations(ann_file)
         for i in range(len(self.images)):
             self.images[i] = self.root + '/' + self.images[i]
         self.transforms = transforms 
         self.id_to_img_map = list(range(self.n_images))
         # Check the data and compile some internal structure of data
-    def parse_annotations(self,ann_file):
-        label_list = [[]] * self.n_images
-        box_list = [[]] * self.n_images
-        with open(ann_file,'r') as f:
-            reader = csv.reader(f)
-            head = next(reader)
-            for row in reader:
-                r_index = int(row[0])
-                row_labels = ast.literal_eval(row[4])
-                label_list[r_index] = [self.ann_dict[l] for l in row_labels]
-                box_list[r_index] = ast.literal_eval(row[3])
-        return label_list, box_list
 
     def __getitem__(self,idx):
+        img, anno = super(BirdDataset, self).__getitem__(idx)
+
+        # filter crowd annotations (doesn't apply to bird Dataset)
+        anno = [obj for obj in anno if obj["iscrowd"] == 0]
+
         # load the image as a PIL image
-        image = Image.open(self.images[idx])
-        boxes = self.box_list[idx]
-        labels = self.label_list[idx]
-        # and labels
-        # I don't quite understand the label construction either
-        labels = torch.tensor(labels)
-        # e.g. boxes = [[0,0,10,10],[10,20,50,50],...,[x1,y1,x2,y2]]
-        # create a boxlist from the boxes
-        boxlist = BoxList(boxes, image.size, mode="xyxy")
-        boxlist.add_field("labels",labels)
+        boxes = [obj["bbox"] for obj in anno]
+        boxes = torch.as_tensor(boxes).reshape(-1, 4) # in case of no boxes
+        target = BoxList(boxes, img.size, mode="xywh").convert("xyxy")
 
-        ## I don't quite understand this part
-        if self.transforms:
-            image, boxlist = self.transforms(image,boxlist)
+        classes = [obj["category_id"] for obj in anno]
+        #print(classes)
+        # Don't think I need this bit (and it's not coded)
+        #classes = [self.json_category_id_to_contiguous_id[c] for c in classes]
+        classes = torch.tensor(classes)
+        target.add_field("labels", classes)
+        
+        if anno and "segmentation" in anno[0]:
+            masks = [obj["segmentation"] for obj in anno]
+            masks = SegmentationMask(masks, img.size, mode='poly')
+            target.add_field("masks", masks)
 
-        return image, boxlist, idx
+        target = target.clip_to_image(remove_empty=True)
 
-    ## Not sure why I need this, but I seem to need this...
-    def __len__(self):
-        return len(self.images)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+
+        #print('pulling img',idx)
+        #print(target)
+        return img, target, idx
 
     def get_img_info(self,idx):
         # This might not be maximally efficient, but I think it's ok
